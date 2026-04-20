@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Streaming Studio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --panel-bg: rgba(30, 41, 59, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --secondary: #8b5cf6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.1);
+      --error: #ef4444;
+      --error-bg: rgba(239, 68, 68, 0.1);
+      --border-radius: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-color);
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 25%);
+      color: var(--text-main);
+      padding: 2rem;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: grid;
+      gap: 2rem;
+    }
+
+    .header-title {
+      text-align: center;
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #c7d2fe 0%, #e9d5ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .panel {
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      padding: 2rem;
+      border-radius: var(--border-radius);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    h2::before {
+      content: '';
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+    }
+
+    .form-group { margin-bottom: 1.5rem; }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      color: white;
+      font-family: inherit;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    /* Drag and Drop Zone */
+    .drop-zone {
+      border: 2px dashed var(--glass-border);
+      border-radius: 12px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: rgba(15, 23, 42, 0.3);
+      position: relative;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .drop-zone-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .drop-zone-text {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+    }
+    
+    .file-name-display {
+      margin-top: 10px;
+      font-weight: 500;
+      color: var(--primary);
+      display: none;
+    }
+
+    button {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px -10px var(--primary);
+    }
+
+    .status-badge {
+      margin-top: 1rem;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .success { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+    .error { background: var(--error-bg); color: var(--error); border: 1px solid var(--error); }
+
+    /* Video List */
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .video-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: transform 0.3s, border-color 0.3s;
+    }
+
+    .video-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .video-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .video-meta {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .status-pill {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-ready { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+    .status-processing { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .status-failed { background: rgba(239, 68, 68, 0.2); color: var(--error); }
+
+    /* Player */
+    #videoContainer { display: none; }
+    
+    .player-wrapper {
+      position: relative;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+      border: 1px solid var(--glass-border);
+    }
+
+    video {
+      width: 100%;
+      display: block;
+      aspect-ratio: 16/9;
+    }
+
+    .player-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(15, 23, 42, 0.4);
+      border-radius: 8px;
+    }
+
+    select {
+      background: rgba(15, 23, 42, 0.8);
+      color: white;
+      border: 1px solid var(--glass-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .refresh-btn {
+      width: auto;
+      padding: 8px 16px;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .refresh-btn:hover {
+      background: rgba(255,255,255,0.15);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+</head>
+<body>
+
+  <div class="container">
+    <div>
+      <h1 class="header-title">Studio Core</h1>
+      <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">HLS Video Transcoding & Streaming Engine</p>
+    </div>
+
+    <!-- Upload Panel -->
+    <div class="panel">
+      <h2>Upload Media</h2>
+      <form id="uploadForm">
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="title" required placeholder="Enter video title...">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" id="description" placeholder="Enter a short description...">
+        </div>
+        
+        <div class="form-group">
+          <label>Media File (.mp4, .mkv)</label>
+          <div class="drop-zone" id="dropZone">
+            <span class="drop-zone-icon">📁</span>
+            <span class="drop-zone-text">Drag & Drop your video file here or click to browse</span>
+            <input type="file" id="videoFile" accept="video/mp4,video/x-matroska" required>
+            <div class="file-name-display" id="fileNameDisplay"></div>
+          </div>
+        </div>
+        
+        <button type="submit" id="uploadBtn">Process & Upload Media</button>
+      </form>
+
+      <div id="uploadStatus"></div>
+    </div>
+
+    <!-- Player Panel -->
+    <div class="panel" id="videoContainer">
+      <h2>Now Streaming</h2>
+      <p id="nowPlaying" style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem; word-break: break-all;"></p>
+      
+      <div class="player-wrapper">
+        <video id="player" controls></video>
+      </div>
+
+      <div class="player-controls" id="qualityWrapper" style="display: none;">
+        <span>Stream Quality</span>
+        <select id="qualitySelector">
+          <option value="-1">Auto (Adaptive)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Video List Panel -->
+    <div class="panel" id="videoList">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>Library</h2>
+        <button type="button" class="refresh-btn" onclick="loadVideos()">⟳ Refresh</button>
+      </div>
+      <div id="listContainer" class="video-grid"></div>
+    </div>
+
+  </div>
+
+  <script>
+    let hlsInstance = null;
+    const qualitySelector = document.getElementById('qualitySelector');
+    const qualityWrapper = document.getElementById('qualityWrapper');
+    const uploadForm = document.getElementById('uploadForm');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const listContainer = document.getElementById('listContainer');
+    const videoContainer = document.getElementById('videoContainer');
+    const player = document.getElementById('player');
+    const nowPlaying = document.getElementById('nowPlaying');
+    const uploadBtn = document.getElementById('uploadBtn');
+
+    // Drag and Drop Logic
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('videoFile');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    const dropZoneText = document.querySelector('.drop-zone-text');
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      let dt = e.dataTransfer;
+      let files = dt.files;
+      if (files && files.length > 0) {
+        fileInput.files = files; // Assign files to input
+        updateFileDisplay();
+      }
+    });
+
+    fileInput.addEventListener('change', updateFileDisplay);
+
+    function updateFileDisplay() {
+      if (fileInput.files && fileInput.files.length > 0) {
+        fileNameDisplay.textContent = `Selected: ${fileInput.files[0].name}`;
+        fileNameDisplay.style.display = 'block';
+        dropZoneText.style.display = 'none';
+      } else {
+        fileNameDisplay.style.display = 'none';
+        dropZoneText.style.display = 'inline';
+      }
+    }
+
+    // Handle Upload
+    uploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const file = fileInput.files[0];
+      const title = document.getElementById('title').value;
+      const description = document.getElementById('description').value;
+
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('video', file);
+      formData.append('title', title);
+      formData.append('description', description);
+
+      uploadBtn.disabled = true;
+      uploadBtn.innerText = 'Uploading...';
+      uploadStatus.innerHTML = '<div class="status-badge">Uploading and queuing for background processing... 🕒</div>';
+
+      try {
+        const response = await fetch('/api/videos/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const result = await response.json();
+
+        if (result.success) {
+          uploadStatus.innerHTML = `<div class="status-badge success">✨ Upload successful! Processing started. (ID: ${result.data._id})</div>`;
+          uploadForm.reset();
+          updateFileDisplay(); // reset file display
+          loadVideos();
+        } else {
+          uploadStatus.innerHTML = `<div class="status-badge error">❌ Error: ${result.message}</div>`;
+        }
+      } catch (error) {
+        uploadStatus.innerHTML = `<div class="status-badge error">⚠️ Failed: ${error.message}</div>`;
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.innerText = 'Process & Upload Media';
+        
+        // hide status after a while
+        setTimeout(() => {
+          if (uploadStatus.innerHTML.includes('success')) {
+            uploadStatus.innerHTML = '';
+          }
+        }, 5000);
+      }
+    });
+
+    // Get Status Class
+    const getStatusInfo = (status) => {
+      if (status === 'ready') return { class: 'status-ready', text: 'Ready' };
+      if (status === 'processing') return { class: 'status-processing', text: 'Processing' };
+      return { class: 'status-failed', text: 'Error' };
+    };
+
+    // Load Videos
+    const loadVideos = async () => {
+      try {
+        listContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem;">Loading library...</div>';
+        const response = await fetch('/api/videos');
+        const result = await response.json();
+        
+        if (result.success && result.data.length > 0) {
+          listContainer.innerHTML = result.data.map(video => {
+            const statusInfo = getStatusInfo(video.status);
+            const resolutionsText = video.resolutions && video.resolutions.length > 0 
+                                      ? video.resolutions.join('p, ') + 'p' 
+                                      : 'N/A';
+            return `
+            <div class="video-card">
+              <div class="video-title" title="${video.title}">${video.title}</div>
+              <div class="video-meta">
+                <span class="status-pill ${statusInfo.class}">${statusInfo.text}</span>
+                <span>${resolutionsText}</span>
+              </div>
+              <button 
+                onclick="playVideo('${video._id}', '${video.status}')" 
+                ${video.status !== 'ready' ? 'style="background:rgba(255,255,255,0.1); color:#94a3b8; pointer-events:none;"' : ''}>
+                ${video.status === 'ready' ? '▶ Play Stream' : 'Wait...'}
+              </button>
+            </div>
+          `}).join('');
+        } else {
+          listContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #94a3b8; padding: 2rem;">No videos uploaded yet.</div>';
+        }
+      } catch (err) {
+        listContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--error); padding: 2rem;">Failed to load library.</div>`;
+      }
+    };
+
+    // Play HLS Stream
+    const playVideo = async (id, status) => {
+      if (status !== 'ready') return;
+
+      try {
+        const response = await fetch(`/api/videos/${id}/stream`);
+        const result = await response.json();
+
+        if (result.success && result.data.streamUrl) {
+          videoContainer.style.display = 'block';
+          // Scroll to player smoothly
+          videoContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          
+          nowPlaying.innerText = `Source: ${result.data.streamUrl}`;
+          
+          const streamUrl = result.data.streamUrl;
+
+          if (Hls.isSupported()) {
+            if (hlsInstance) hlsInstance.destroy();
+            hlsInstance = new Hls();
+            hlsInstance.loadSource(streamUrl);
+            hlsInstance.attachMedia(player);
+            
+            hlsInstance.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
+              qualityWrapper.style.display = 'flex';
+              qualitySelector.innerHTML = '<option value="-1">Auto (Adaptive)</option>';
+              data.levels.forEach((level, index) => {
+                 let option = document.createElement('option');
+                 option.value = index;
+                 option.text = `${level.height}p (${Math.round(level.bitrate/1000)} kbps)`;
+                 qualitySelector.appendChild(option);
+              });
+              player.play();
+            });
+
+            qualitySelector.onchange = (e) => {
+              if (hlsInstance) {
+                 hlsInstance.currentLevel = parseInt(e.target.value);
+              }
+            };
+          } else if (player.canPlayType('application/vnd.apple.mpegurl')) {
+            qualityWrapper.style.display = 'none'; 
+            player.src = streamUrl;
+            player.addEventListener('loadedmetadata', function() {
+              player.play();
+            });
+          }
+        } else {
+          alert('Stream URL could not be fetched.');
+        }
+      } catch (err) {
+        alert('Failed to play stream.');
+      }
+    };
+
+    // Initial Load
+    loadVideos();
+  </script>
+</body>
+</html>
