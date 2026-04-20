@@ -86,7 +86,7 @@ GET /api/videos/:id/stream
 ## 🎬 How It Works
 
 1. Admin uploads video
-2. Video stored locally (or S3-ready design)
+2. Video stored locally
 3. Job added to BullMQ queue
 4. Worker picks job and runs FFmpeg
 5. Video converted into multiple resolutions
@@ -133,7 +133,7 @@ node worker/worker.js
 
 Open:
 ```
-http://localhost:4000/videos/output/{videoId}/master.m3u8
+http://localhost:5009/videos/output/{videoId}/master.m3u8
 ```
 
 Use:
